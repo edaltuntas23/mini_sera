@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/game_provider.dart';
+import 'provides/game_provider.dart'; // Klasör adın 'provides' olduğu için böyle bıraktım
 import 'screens/home_screen.dart';
- 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MiniGreenhouseApp());
 }
- 
+
 class MiniGreenhouseApp extends StatelessWidget {
   const MiniGreenhouseApp({super.key});
- 
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
