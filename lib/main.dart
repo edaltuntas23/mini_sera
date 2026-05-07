@@ -1,6 +1,9 @@
+// ignore_for_file: depend_on_referenced_packages
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'provides/game_provider.dart'; // Klasör adın 'provides' olduğu için böyle bıraktım
+
+import 'providers/game_provider.dart';
+import 'providers/shop_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -13,14 +16,20 @@ class MiniGreenhouseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => GameProvider()..init(),
+    return MultiProvider(
+      providers: [
+        // GameProvider handles the live game loop, score, and basket position.
+        ChangeNotifierProvider(create: (_) => GameProvider()),
+        // ShopProvider handles coin balance, unlocked fruits, and selection.
+        // It loads persisted data from SharedPreferences on construction.
+        ChangeNotifierProvider(create: (_) => ShopProvider()..init()),
+      ],
       child: MaterialApp(
         title: 'Mini Greenhouse',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF4CAF50),
+            seedColor: const Color(0xFF4CAF50), // Green greenhouse theme
             brightness: Brightness.light,
           ),
           useMaterial3: true,

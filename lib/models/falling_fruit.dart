@@ -1,35 +1,25 @@
-import 'dart:math';
-
+/// Represents a single falling fruit object on the game canvas.
 class FallingFruit {
+  /// Unique identifier for this fruit instance.
+  final String id;
+
+  /// Horizontal position from the left edge (0.0 to screenWidth - fruitSize).
   double x;
+
+  /// Vertical position from the top edge (starts negative, moves downward).
   double y;
-  final double speed;
-  final double size;
+
+  /// The emoji symbol rendered as the fruit visual.
   final String emoji;
-  bool caught;
-  bool missed;
+
+  /// How fast this fruit falls per game tick (pixels per tick).
+  final double speed;
 
   FallingFruit({
+    required this.id,
     required this.x,
     required this.y,
-    required this.speed,
-    this.size = 40.0,
     required this.emoji,
-    this.caught = false,
-    this.missed = false,
+    required this.speed,
   });
-
-  static FallingFruit spawn({
-    required String emoji,
-    required double screenWidth,
-    required double baseSpeed,
-    required Random random,
-  }) {
-    return FallingFruit(
-      x: random.nextDouble() * (screenWidth - 40),
-      y: -50,
-      speed: baseSpeed + random.nextDouble() * 2,
-      emoji: emoji,
-    );
-  }
 }
