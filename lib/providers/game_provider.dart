@@ -22,10 +22,13 @@ class GameProvider extends ChangeNotifier {
 
   int _score = 0;
   int get score => _score;
+
   int _lives = 3;
   int get lives => _lives;
+
   double _basketX = 0;
   double get basketX => _basketX;
+
   double _screenWidth = 0;
   double _screenHeight = 0;
 
@@ -36,6 +39,8 @@ class GameProvider extends ChangeNotifier {
 
   bool _coinsAwarded = false;
   bool get coinsAwarded => _coinsAwarded;
+
+  /// 1:1 — coins earned equals score.
   int get earnedCoins => _score;
 
   void setScreenSize(double w, double h) {
@@ -83,6 +88,7 @@ class GameProvider extends ChangeNotifier {
     if (_state != GameState.playing) return;
     _tick++;
     if (_tick % spawnEvery == 0) _spawn();
+
     for (final f in _fruits) {
       f.y += f.speed;
     }

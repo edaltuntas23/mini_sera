@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/fruit_item.dart';
 import '../providers/shop_provider.dart';
 import '../widgets/fruit_bg.dart';
+import 'game_menu_page.dart';
 
 // ── In-flight emoji model ─────────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ class _Flyer {
 // ── Market Page ───────────────────────────────────────────────────────────────
 
 /// Wooden-stall themed Market.
-/// Navigation: Back → GameMenuPage.
+/// Navigation: Back → GameMenuPage (always, no white screen).
 class MarketPage extends StatefulWidget {
   const MarketPage({super.key});
 
@@ -49,6 +50,15 @@ class _MarketPageState extends State<MarketPage> with TickerProviderStateMixin {
   void dispose() {
     _cartCtrl.dispose();
     super.dispose();
+  }
+
+  /// Navigate back to GameMenuPage, clearing the stack above it.
+  void _backToMenu() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const GameMenuPage()),
+      (route) => false,
+    );
   }
 
   Offset _cartCenter() {
@@ -109,79 +119,85 @@ class _MarketPageState extends State<MarketPage> with TickerProviderStateMixin {
     final shop = context.watch<ShopProvider>();
     final fruits = shop.fruits;
 
-    // Pair into rows of 2
     final rows = <List<FruitItem>>[];
     for (var i = 0; i < fruits.length; i += 2) {
       rows.add(fruits.sublist(i, (i + 2).clamp(0, fruits.length)));
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFEAF4EC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF5C3317),
-        foregroundColor: Colors.white,
-        elevation: 4,
-        shadowColor: Colors.black45,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          tooltip: 'Oyun Menüsüne Dön',
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('🛒 Manav Market',
-            style: TextStyle(
-                fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: 0.3)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Row(children: [
-              const Text('🪙', style: TextStyle(fontSize: 18)),
-              const SizedBox(width: 4),
-              Text('${shop.coins}',
-                  style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFD700))),
-            ]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _backToMenu();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFEAF4EC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF5C3317),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shadowColor: Colors.black45,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            tooltip: 'Oyun Menüsüne Dön',
+            onPressed: _backToMenu,
           ),
-        ],
-      ),
-      body: Stack(children: [
-        // ── Fruit background ──────────────────────────────────────────
-        const FruitBg(),
+          title: const Text('🛒 Manav Market',
+              style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                  letterSpacing: 0.3)),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Row(children: [
+                const Text('🪙', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 4),
+                Text('${shop.coins}',
+                    style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFFD700))),
+              ]),
+            ),
+          ],
+        ),
+        body: Stack(children: [
+          const FruitBg(),
 
-        // ── Stall layout ──────────────────────────────────────────────
-        Column(children: [
-          _StallSignBanner(selectedEmoji: shop.selectedEmoji),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
-              itemCount: rows.length,
-              itemBuilder: (_, i) => _ShelfRow(
-                fruits: rows[i],
-                selectedId: shop.selectedFruitId,
-                onTap: _handleTap,
+          Column(children: [
+            _StallSignBanner(selectedEmoji: shop.selectedEmoji),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+                itemCount: rows.length,
+                itemBuilder: (_, i) => _ShelfRow(
+                  fruits: rows[i],
+                  selectedId: shop.selectedFruitId,
+                  onTap: _handleTap,
+                ),
               ),
             ),
+          ]),
+
+          // Parabolic flyers
+          for (final f in _flyers)
+            _ParabolicFlyer(
+              key: ValueKey(f.id),
+              emoji: f.emoji,
+              start: f.start,
+              targetResolver: _cartCenter,
+              onLanded: () => _onLanded(f.id),
+            ),
+
+          // Shopping cart
+          Positioned(
+            left: 16,
+            bottom: 20,
+            child: _CartWidget(key: _cartKey, scaleAnim: _cartScale),
           ),
         ]),
-
-        // ── Parabolic flyers ──────────────────────────────────────────
-        for (final f in _flyers)
-          _ParabolicFlyer(
-            key: ValueKey(f.id),
-            emoji: f.emoji,
-            start: f.start,
-            targetResolver: _cartCenter,
-            onLanded: () => _onLanded(f.id),
-          ),
-
-        // ── Borderless shopping cart (bottom-left) ────────────────────
-        Positioned(
-          left: 16,
-          bottom: 20,
-          child: _CartWidget(key: _cartKey, scaleAnim: _cartScale),
-        ),
-      ]),
+      ),
     );
   }
 }
@@ -269,7 +285,6 @@ class _ShelfRow extends StatelessWidget {
             );
           }).toList(),
         ),
-        // Wooden plank
         Container(
           height: 18,
           margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -297,7 +312,6 @@ class _ShelfRow extends StatelessWidget {
             ),
           ),
         ),
-        // Wall below plank
         Container(
           height: 10,
           margin: const EdgeInsets.only(left: 6, right: 6, bottom: 14),
@@ -311,7 +325,7 @@ class _ShelfRow extends StatelessWidget {
   }
 }
 
-// ── Fruit item (no box/border — sits directly on shelf) ──────────────────────
+// ── Fruit item ────────────────────────────────────────────────────────────────
 
 class _FruitStall extends StatelessWidget {
   final FruitItem fruit;
@@ -340,16 +354,11 @@ class _FruitStall extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 4),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          // Emoji — direct on shelf, no card border
           Stack(alignment: Alignment.center, children: [
             AnimatedScale(
               scale: isSelected ? 1.12 : 1.0,
               duration: const Duration(milliseconds: 200),
-              child: Text(
-                fruit.emoji,
-                style: TextStyle(
-                    fontSize: 52, color: fruit.isUnlocked ? null : null),
-              ),
+              child: Text(fruit.emoji, style: const TextStyle(fontSize: 52)),
             ),
             if (!fruit.isUnlocked)
               Positioned(
@@ -382,7 +391,6 @@ class _FruitStall extends StatelessWidget {
                 ),
               ),
           ]),
-
           const SizedBox(height: 4),
           Text(fruit.name,
               textAlign: TextAlign.center,
@@ -393,8 +401,6 @@ class _FruitStall extends StatelessWidget {
                       ? const Color(0xFF3E2000)
                       : const Color(0xFF7A5C2E))),
           const SizedBox(height: 4),
-
-          // Price badge or owned badge — small, understated
           if (fruit.isUnlocked)
             Text(
               isSelected ? '✓ Seçili' : 'Sahip',
@@ -421,7 +427,7 @@ class _FruitStall extends StatelessWidget {
   }
 }
 
-// ── Borderless shopping cart ──────────────────────────────────────────────────
+// ── Shopping cart ─────────────────────────────────────────────────────────────
 
 class _CartWidget extends StatelessWidget {
   final Animation<double> scaleAnim;

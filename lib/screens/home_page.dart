@@ -6,8 +6,6 @@ import '../providers/shop_provider.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/fruit_bg.dart';
 
-/// Home Page — sensor dashboard with unified sensor widget.
-/// Navigation is EXCLUSIVELY via the Drawer.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -15,6 +13,11 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final sensor = context.watch<SensorProvider>();
     final shop = context.watch<ShopProvider>();
+    final allFruits = shop.fruits;
+    final dashFruit = allFruits.firstWhere(
+      (f) => f.id == sensor.dashboardFruitId,
+      orElse: () => allFruits.first,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFEAF4EC),
@@ -33,23 +36,14 @@ class HomePage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // ── Decorative fruit emoji background ──────────────────────
           const FruitBg(),
-
-          // ── Main scrollable content ────────────────────────────────
           SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
             child: Column(children: [
-              // Logo
-              _LogoSection(
-                plantEmoji: sensor.currentPlantEmoji,
-                plantName: sensor.currentPlant,
-              ),
+              const _LogoSection(),
               const SizedBox(height: 24),
-
-              // ── Active Fruit Header (tappable) ─────────────────────
               GestureDetector(
-                onTap: () => _showFruitPicker(context, shop),
+                onTap: () => _showDashboardFruitPicker(context, shop, sensor),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -67,28 +61,22 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                   child: Row(children: [
-                    Text(shop.selectedEmoji,
-                        style: const TextStyle(fontSize: 32)),
+                    Text(dashFruit.emoji, style: const TextStyle(fontSize: 32)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Aktif Meyve',
+                            const Text('İzlenen Bitki',
                                 style: TextStyle(
                                     fontSize: 11,
                                     color: Color(0xFF52796F),
                                     fontWeight: FontWeight.w600)),
-                            Text(
-                              shop.fruits
-                                  .firstWhere(
-                                      (f) => f.id == shop.selectedFruitId)
-                                  .name,
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1B4332)),
-                            ),
+                            Text(dashFruit.name,
+                                style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1B4332))),
                           ]),
                     ),
                     const Icon(Icons.expand_more_rounded,
@@ -97,26 +85,19 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // ── Live data label ────────────────────────────────────
               Row(children: [
                 _PulseDot(),
                 const SizedBox(width: 8),
                 const Text('CANLI SENSÖR VERİSİ',
                     style: TextStyle(
-                      color: Color(0xFF2D6A4F),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                    )),
+                        color: Color(0xFF2D6A4F),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2)),
               ]),
               const SizedBox(height: 12),
-
-              // ── Unified Sensor Widget ──────────────────────────────
               _UnifiedSensorCard(sensor: sensor),
               const SizedBox(height: 16),
-
-              // ── Health summary ─────────────────────────────────────
               _HealthCard(sensor: sensor),
             ]),
           ),
@@ -125,25 +106,23 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void _showFruitPicker(BuildContext context, ShopProvider shop) {
+  void _showDashboardFruitPicker(
+      BuildContext context, ShopProvider shop, SensorProvider sensor) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => _FruitPickerSheet(shop: shop),
+      builder: (_) => _DashboardFruitPickerSheet(shop: shop, sensor: sensor),
     );
   }
 }
 
-// ── Fruit Picker Bottom Sheet ─────────────────────────────────────────────────
-
-class _FruitPickerSheet extends StatelessWidget {
+class _DashboardFruitPickerSheet extends StatelessWidget {
   final ShopProvider shop;
-  const _FruitPickerSheet({required this.shop});
+  final SensorProvider sensor;
+  const _DashboardFruitPickerSheet({required this.shop, required this.sensor});
 
   @override
   Widget build(BuildContext context) {
-    final unlockedFruits = shop.fruits.where((f) => f.isUnlocked).toList();
-
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0D1F16),
@@ -155,26 +134,28 @@ class _FruitPickerSheet extends StatelessWidget {
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: const Color(0xFF2D6A4F),
-            borderRadius: BorderRadius.circular(2),
-          ),
+              color: const Color(0xFF2D6A4F),
+              borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(height: 16),
-        const Text('Aktif Meyve Seç',
+        const Text('İzlenen Bitkiyi Seç',
             style: TextStyle(
                 color: Colors.white,
                 fontSize: 17,
                 fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        const Text('Tüm bitkiler dashboard için erişilebilir',
+            style: TextStyle(color: Color(0xFF52796F), fontSize: 12)),
         const SizedBox(height: 16),
         Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: unlockedFruits.map((f) {
-            final selected = f.id == shop.selectedFruitId;
+          children: shop.fruits.map((f) {
+            final selected = f.id == sensor.dashboardFruitId;
             return GestureDetector(
-              onTap: () async {
-                await shop.selectFruit(f.id);
-                if (context.mounted) Navigator.pop(context);
+              onTap: () {
+                sensor.setDashboardFruit(f.id, f.name, f.emoji);
+                Navigator.pop(context);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
@@ -210,14 +191,13 @@ class _FruitPickerSheet extends StatelessWidget {
   }
 }
 
-// ── Unified Sensor Card ───────────────────────────────────────────────────────
-
 class _UnifiedSensorCard extends StatelessWidget {
   final SensorProvider sensor;
   const _UnifiedSensorCard({required this.sensor});
 
   @override
   Widget build(BuildContext context) {
+    final range = sensor.currentRange;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       padding: const EdgeInsets.all(20),
@@ -228,64 +208,52 @@ class _UnifiedSensorCard extends StatelessWidget {
             color: const Color(0xFF52B788).withValues(alpha: 0.30), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2D6A4F).withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          )
+              color: const Color(0xFF2D6A4F).withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
         ],
       ),
       child: Column(children: [
-        // Row of three metrics
         Row(children: [
           Expanded(
-            child: _MetricTile(
-              icon: '🌡️',
-              label: 'Sıcaklık',
-              value: '${sensor.temperature.toStringAsFixed(1)}°C',
-              status: sensor.tempStatus,
-            ),
-          ),
+              child: _MetricTile(
+                  icon: '🌡️',
+                  label: 'Sıcaklık',
+                  value: '${sensor.temperature.toStringAsFixed(1)}°C',
+                  status: sensor.tempStatus)),
           _vDivider(),
           Expanded(
-            child: _MetricTile(
-              icon: '💧',
-              label: 'Nem',
-              value: '%${sensor.humidity.toStringAsFixed(1)}',
-              status: sensor.humidityStatus,
-            ),
-          ),
+              child: _MetricTile(
+                  icon: '💧',
+                  label: 'Nem',
+                  value: '%${sensor.humidity.toStringAsFixed(1)}',
+                  status: sensor.humidityStatus)),
           _vDivider(),
           Expanded(
-            child: _MetricTile(
-              icon: '🚿',
-              label: 'Su',
-              value: '${sensor.waterLevel.toStringAsFixed(0)}ml',
-              status: sensor.waterStatus,
-            ),
-          ),
+              child: _MetricTile(
+                  icon: '🚿',
+                  label: 'Su',
+                  value: '${sensor.waterLevel.toStringAsFixed(0)}ml',
+                  status: sensor.waterStatus)),
         ]),
         const SizedBox(height: 14),
-        // Progress bars
         _SensorBar(
-          label: 'Sıcaklık',
-          fill: ((sensor.temperature - 10) / 30).clamp(0.0, 1.0),
-          color: _tempColor(sensor.temperature),
-          ideal: 'İdeal: 15–25°C',
-        ),
+            label: 'Sıcaklık',
+            fill: ((sensor.temperature - 5) / 35).clamp(0.0, 1.0),
+            color: _tempColor(sensor.temperature),
+            ideal: range.tempLabel),
         const SizedBox(height: 8),
         _SensorBar(
-          label: 'Nem',
-          fill: (sensor.humidity / 100).clamp(0.0, 1.0),
-          color: const Color(0xFF48CAE4),
-          ideal: 'İdeal: %60–80',
-        ),
+            label: 'Nem',
+            fill: (sensor.humidity / 100).clamp(0.0, 1.0),
+            color: const Color(0xFF48CAE4),
+            ideal: range.humidLabel),
         const SizedBox(height: 8),
         _SensorBar(
-          label: 'Su Seviyesi',
-          fill: (sensor.waterLevel / 1000).clamp(0.0, 1.0),
-          color: const Color(0xFF0096C7),
-          ideal: 'İdeal: 300–600 ml',
-        ),
+            label: 'Su Seviyesi',
+            fill: (sensor.waterLevel / 1000).clamp(0.0, 1.0),
+            color: const Color(0xFF0096C7),
+            ideal: range.waterLabel),
       ]),
     );
   }
@@ -372,22 +340,17 @@ class _SensorBar extends StatelessWidget {
   }
 }
 
-// ── Logo section ──────────────────────────────────────────────────────────────
-
 class _LogoSection extends StatelessWidget {
-  final String plantEmoji, plantName;
-  const _LogoSection({required this.plantEmoji, required this.plantName});
+  const _LogoSection();
 
   @override
   Widget build(BuildContext context) {
     return Column(children: [
       Container(
-        width: 110,
-        height: 110,
+        width: 140,
+        height: 140,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const RadialGradient(
-              colors: [Color(0xFF52B788), Color(0xFF1B4332)]),
           border: Border.all(color: const Color(0xFF52B788), width: 2.5),
           boxShadow: [
             BoxShadow(
@@ -397,16 +360,30 @@ class _LogoSection extends StatelessWidget {
             )
           ],
         ),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(plantEmoji, style: const TextStyle(fontSize: 42)),
-          const SizedBox(height: 2),
-          const Text('MINI SERA',
-              style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2)),
-        ]),
+        clipBehavior: Clip.antiAlias,
+        child: Transform.scale(
+          scale: 1.25,
+          child: Image.asset(
+            'assets/app_logo.png',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: const Color(0xFF1B4332),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('🌿', style: TextStyle(fontSize: 42)),
+                  SizedBox(height: 2),
+                  Text('MINI SERA',
+                      style: TextStyle(
+                          fontSize: 8,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2)),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
       const SizedBox(height: 14),
       const Text('Mini Sera Uygulamasına Hoş Geldiniz',
@@ -415,14 +392,9 @@ class _LogoSection extends StatelessWidget {
               color: Color(0xFF1B4332),
               fontSize: 16,
               fontWeight: FontWeight.w700)),
-      const SizedBox(height: 4),
-      Text('Aktif bitki: $plantEmoji $plantName',
-          style: const TextStyle(color: Color(0xFF2D6A4F), fontSize: 13)),
     ]);
   }
 }
-
-// ── Health card ───────────────────────────────────────────────────────────────
 
 class _HealthCard extends StatelessWidget {
   final SensorProvider sensor;
@@ -430,11 +402,9 @@ class _HealthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final score = [
-      sensor.tempStatus,
-      sensor.humidityStatus,
-      sensor.waterStatus,
-    ].where((s) => s == SensorStatus.normal).length;
+    final score = [sensor.tempStatus, sensor.humidityStatus, sensor.waterStatus]
+        .where((s) => s == SensorStatus.normal)
+        .length;
 
     final (emoji, label, color) = switch (score) {
       3 => ('🌟', 'Mükemmel! Sera koşulları ideal.', const Color(0xFF2D6A4F)),
@@ -460,19 +430,17 @@ class _HealthCard extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.40), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          )
+              color: color.withValues(alpha: 0.10),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
         ],
       ),
       child: Row(children: [
         Text(emoji, style: const TextStyle(fontSize: 32)),
         const SizedBox(width: 14),
         Expanded(
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Sera Sağlık Skoru: $score/3',
                 style: TextStyle(
                     color: color, fontSize: 14, fontWeight: FontWeight.w800)),
@@ -480,14 +448,12 @@ class _HealthCard extends StatelessWidget {
             Text(label,
                 style: const TextStyle(
                     color: Color(0xFF2D6A4F), fontSize: 12, height: 1.4)),
-          ],
-        )),
+          ]),
+        ),
       ]),
     );
   }
 }
-
-// ── Pulse dot ─────────────────────────────────────────────────────────────────
 
 class _PulseDot extends StatefulWidget {
   @override

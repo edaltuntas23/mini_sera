@@ -12,8 +12,8 @@ import 'result_screen.dart';
 /// Game Page — full-screen fruit catcher.
 ///
 /// Navigation:
-///   Back / exit confirmed  →  GameMenuPage (pushAndRemoveUntil back to menu)
-///   Game Over              →  ResultScreen
+///   Back / exit confirmed  →  GameMenuPage (via pushAndRemoveUntil)
+///   Game Over              →  ResultScreen (pushReplacement)
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
 
@@ -30,6 +30,7 @@ class _GamePageState extends State<GamePage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // Use the GAME-specific selected emoji (coin-locked)
       context
           .read<GameProvider>()
           .setActiveEmoji(context.read<ShopProvider>().selectedEmoji);
@@ -49,6 +50,7 @@ class _GamePageState extends State<GamePage> {
       if (!mounted) return;
       if (!game.coinsAwarded) {
         game.markCoinsAwarded();
+        // 1:1 — earnedCoins == score
         await context.read<ShopProvider>().addCoins(game.earnedCoins);
       }
       if (!mounted) return;
@@ -67,13 +69,7 @@ class _GamePageState extends State<GamePage> {
 
     if (game.state != GameState.playing) {
       game.resetToIdle();
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const GameMenuPage()),
-          (_) => false,
-        );
-      }
+      if (mounted) _goToMenu();
       return;
     }
 
@@ -110,12 +106,17 @@ class _GamePageState extends State<GamePage> {
 
     if (confirmed == true && mounted) {
       game.resetToIdle();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const GameMenuPage()),
-        (_) => false,
-      );
+      _goToMenu();
     }
+  }
+
+  /// Navigate to GameMenuPage, clearing this page from the stack.
+  void _goToMenu() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const GameMenuPage()),
+      (route) => false,
+    );
   }
 
   @override
@@ -123,67 +124,72 @@ class _GamePageState extends State<GamePage> {
     final game = context.watch<GameProvider>();
     if (game.state == GameState.gameOver && !_navigating) _goToResult(game);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFEAF4EC),
-      body: SafeArea(
-        child: LayoutBuilder(builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final h = constraints.maxHeight;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmExit(context);
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFEAF4EC),
+        body: SafeArea(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final w = constraints.maxWidth;
+            final h = constraints.maxHeight;
 
-          if (!_sizeSet && w > 0 && h > 0) {
-            _sizeSet = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              context.read<GameProvider>().setScreenSize(w, h);
-            });
-          }
+            if (!_sizeSet && w > 0 && h > 0) {
+              _sizeSet = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                context.read<GameProvider>().setScreenSize(w, h);
+              });
+            }
 
-          return GestureDetector(
-            onPanUpdate: (d) =>
-                context.read<GameProvider>().moveBasket(d.delta.dx),
-            onTapDown: (d) =>
-                context.read<GameProvider>().setBasketX(d.localPosition.dx),
-            child: Stack(children: [
-              // Background
-              const FruitBg(),
+            return GestureDetector(
+              onPanUpdate: (d) =>
+                  context.read<GameProvider>().moveBasket(d.delta.dx),
+              onTapDown: (d) =>
+                  context.read<GameProvider>().setBasketX(d.localPosition.dx),
+              child: Stack(children: [
+                const FruitBg(),
 
-              // ── HUD ──────────────────────────────────────────────
-              Positioned(
-                top: 8,
-                left: 8,
-                right: 8,
-                child: _Hud(
-                  score: game.score,
-                  lives: game.lives,
-                  onBack: () => _confirmExit(context),
-                ),
-              ),
-
-              // ── Falling fruits ────────────────────────────────────
-              for (final fruit in game.fruits)
+                // ── HUD ────────────────────────────────────────────────────
                 Positioned(
-                  left: fruit.x,
-                  top: fruit.y,
-                  child: FruitWidget(emoji: fruit.emoji),
-                ),
-
-              // ── Basket ───────────────────────────────────────────
-              Positioned(
-                bottom: 80,
-                left: game.basketX - GameProvider.basketWidth / 2,
-                child: const BasketWidget(),
-              ),
-
-              // ── Idle overlay ──────────────────────────────────────
-              if (game.state == GameState.idle)
-                Positioned.fill(
-                  child: _IdleOverlay(
-                    onStart: () => context.read<GameProvider>().startGame(),
+                  top: 8,
+                  left: 8,
+                  right: 8,
+                  child: _Hud(
+                    score: game.score,
+                    lives: game.lives,
+                    onBack: () => _confirmExit(context),
                   ),
                 ),
-            ]),
-          );
-        }),
+
+                // ── Falling fruits ─────────────────────────────────────────
+                for (final fruit in game.fruits)
+                  Positioned(
+                    left: fruit.x,
+                    top: fruit.y,
+                    child: FruitWidget(emoji: fruit.emoji),
+                  ),
+
+                // ── Basket ─────────────────────────────────────────────────
+                Positioned(
+                  bottom: 80,
+                  left: game.basketX - GameProvider.basketWidth / 2,
+                  child: const BasketWidget(),
+                ),
+
+                // ── Idle overlay ───────────────────────────────────────────
+                if (game.state == GameState.idle)
+                  Positioned.fill(
+                    child: _IdleOverlay(
+                      onStart: () => context.read<GameProvider>().startGame(),
+                    ),
+                  ),
+              ]),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -242,6 +248,7 @@ class _IdleOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Show the GAME-selected emoji (coin-locked selection)
     final shop = context.watch<ShopProvider>();
     return Container(
       color: Colors.black38,
@@ -256,8 +263,8 @@ class _IdleOverlay extends StatelessWidget {
                   color: Colors.white,
                   shadows: [Shadow(blurRadius: 8, color: Colors.black54)])),
           const SizedBox(height: 8),
-          const Text('Sepeti sürükle veya dokun',
-              style: TextStyle(color: Colors.white70, fontSize: 14)),
+          Text('Sepeti sürükle, ${shop.selectedEmoji} topla!',
+              style: const TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: onStart,

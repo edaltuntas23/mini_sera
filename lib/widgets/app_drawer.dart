@@ -5,18 +5,11 @@ import '../providers/shop_provider.dart';
 import '../screens/game_menu_page.dart';
 import '../screens/curiosity_page.dart';
 
-/// Drawer navigation:
-///   Home  →  (drawer)  →  closes drawer, stays on Home (already there)
-///   Game  →  GameMenuPage (pushes)
-///   Meraklısına  →  CuriosityPage (pushes)
-///   Market is NOT in the drawer — accessible only from GameMenuPage.
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // shop provider'ı hala diğer mantıklar için gerekebilir diye tutuyoruz
-    // ancak coin gösteren widget'ı aşağıdan kaldırdık.
     context.watch<ShopProvider>();
 
     return Drawer(
@@ -25,7 +18,6 @@ class AppDrawer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Header ──────────────────────────────────────────────────
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
               decoration: const BoxDecoration(
@@ -41,75 +33,61 @@ class AppDrawer extends StatelessWidget {
                   Container(
                     width: 60,
                     height: 60,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                       border: Border.all(
                           color: const Color(0xFF52B788), width: 1.5),
                     ),
-                    child: const Center(
-                      child: Text('🌱', style: TextStyle(fontSize: 30)),
+                    child: Transform.scale(
+                      scale: 1.25,
+                      child: Image.asset(
+                        'assets/app_logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Text('🌱', style: TextStyle(fontSize: 30)),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Mini Sera',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const Text(
-                    'Sera oyunu & bitki rehberi',
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
-                  ),
-                  // Coin gösteren Container buradan kaldırıldı.
+                  const Text('Mini Sera',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900)),
+                  const Text('Sera oyunu & bitki rehberi',
+                      style: TextStyle(color: Colors.white60, fontSize: 12)),
                 ],
               ),
             ),
-
             const SizedBox(height: 8),
-
-            // ── Home ─────────────────────────────────────────────────────
             _Item(
               emoji: '🏠',
               label: 'Ana Sayfa',
               subtitle: 'Sensör paneli',
-              onTap: () {
-                Navigator.pop(context); // close drawer — we're already home
-              },
+              onTap: () => Navigator.pop(context),
             ),
-
             _divider(),
-
-            // ── Game (→ GameMenuPage) ─────────────────────────────────────
             _Item(
               emoji: '🎮',
               label: 'Mini Greenhouse Oyunu',
               subtitle: 'Oyna ve coin kazan',
               onTap: () => _go(context, const GameMenuPage()),
             ),
-
             _divider(),
-
-            // ── Meraklısına ───────────────────────────────────────────────
             _Item(
               emoji: '🌿',
               label: 'Meraklısına',
               subtitle: 'Bitki büyüme rehberi',
               onTap: () => _go(context, const CuriosityPage()),
             ),
-
             const Spacer(),
-
             const Padding(
               padding: EdgeInsets.all(20),
-              child: Text(
-                'Mini Sera v1.0.0',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Color(0xFF2D6A4F)),
-              ),
+              child: Text('Mini Sera v1.0.0',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Color(0xFF2D6A4F))),
             ),
           ],
         ),
@@ -123,7 +101,7 @@ class AppDrawer extends StatelessWidget {
       );
 
   void _go(BuildContext ctx, Widget page) {
-    Navigator.pop(ctx); // close drawer first
+    Navigator.pop(ctx);
     Navigator.push(ctx, MaterialPageRoute(builder: (_) => page));
   }
 }
@@ -131,12 +109,11 @@ class AppDrawer extends StatelessWidget {
 class _Item extends StatelessWidget {
   final String emoji, label, subtitle;
   final VoidCallback onTap;
-  const _Item({
-    required this.emoji,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _Item(
+      {required this.emoji,
+      required this.label,
+      required this.subtitle,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
