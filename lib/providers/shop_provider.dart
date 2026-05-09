@@ -13,12 +13,11 @@ class ShopProvider extends ChangeNotifier {
 
   final List<FruitItem> fruits = [
     FruitItem(
-      id: 'strawberry',
-      name: 'Strawberry',
-      emoji: '🍓',
-      price: 0,
-      isUnlocked: true,
-    ),
+        id: 'strawberry',
+        name: 'Strawberry',
+        emoji: '🍓',
+        price: 0,
+        isUnlocked: true),
     FruitItem(id: 'tomato', name: 'Tomato', emoji: '🍅', price: 30),
     FruitItem(id: 'pepper', name: 'Bell Pepper', emoji: '🫑', price: 50),
     FruitItem(id: 'eggplant', name: 'Eggplant', emoji: '🍆', price: 80),

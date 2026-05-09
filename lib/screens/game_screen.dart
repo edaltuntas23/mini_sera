@@ -16,12 +16,11 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   bool _sizeSet = false;
-  bool _navigating = false; // Prevents multiple navigations to ResultScreen
+  bool _navigating = false;
 
   @override
   void initState() {
     super.initState();
-    // Sync active emoji from shop when screen first loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final emoji = context.read<ShopProvider>().selectedEmoji;
@@ -31,29 +30,19 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    // Only reset if we did NOT navigate to ResultScreen.
-    // If we did navigate, ResultScreen owns the game state from here.
-    if (!_navigating) {
-      context.read<GameProvider>().resetToIdle();
-    }
+    if (!_navigating) context.read<GameProvider>().resetToIdle();
     super.dispose();
   }
 
-  /// Called exactly once when game over is detected.
-  /// Awards coins via ShopProvider, then navigates to ResultScreen.
   void _goToResult(GameProvider game) {
     if (_navigating) return;
     _navigating = true;
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-
-      // Award coins only if not already awarded (guards against rebuilds)
       if (!game.coinsAwarded) {
         game.markCoinsAwarded();
         await context.read<ShopProvider>().addCoins(game.earnedCoins);
       }
-
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -70,8 +59,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     final game = context.watch<GameProvider>();
-
-    // Trigger result navigation once when game ends
     if (game.state == GameState.gameOver && !_navigating) {
       _goToResult(game);
     }
@@ -83,7 +70,6 @@ class _GameScreenState extends State<GameScreen> {
           builder: (context, constraints) {
             final w = constraints.maxWidth;
             final h = constraints.maxHeight;
-
             if (!_sizeSet && w > 0 && h > 0) {
               _sizeSet = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -99,30 +85,23 @@ class _GameScreenState extends State<GameScreen> {
                   context.read<GameProvider>().setBasketX(d.localPosition.dx),
               child: Stack(
                 children: [
-                  // HUD
                   Positioned(
                     top: 12,
                     left: 12,
                     right: 12,
                     child: _HudBar(score: game.score, lives: game.lives),
                   ),
-
-                  // Falling fruits
                   for (final fruit in game.fruits)
                     Positioned(
                       left: fruit.x,
                       top: fruit.y,
                       child: FruitWidget(emoji: fruit.emoji),
                     ),
-
-                  // Basket
                   Positioned(
                     bottom: 80,
                     left: game.basketX - GameProvider.basketWidth / 2,
                     child: const BasketWidget(),
                   ),
-
-                  // Start overlay
                   if (game.state == GameState.idle)
                     Positioned.fill(
                       child: _StartOverlay(
@@ -139,8 +118,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-// ── HUD ───────────────────────────────────────────────────────────────────────
-
 class _HudBar extends StatelessWidget {
   final int score;
   final int lives;
@@ -153,14 +130,13 @@ class _HudBar extends StatelessWidget {
       children: [
         Row(
           children: List.generate(
-              3,
-              (i) => Padding(
-                    padding: const EdgeInsets.only(right: 2),
-                    child: Text(
-                      i < lives ? '❤️' : '🖤',
-                      style: const TextStyle(fontSize: 22),
-                    ),
-                  )),
+            3,
+            (i) => Padding(
+              padding: const EdgeInsets.only(right: 2),
+              child: Text(i < lives ? '❤️' : '🖤',
+                  style: const TextStyle(fontSize: 22)),
+            ),
+          ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -168,21 +144,16 @@ class _HudBar extends StatelessWidget {
             color: Colors.white70,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            'Skor: $score',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E7D32),
-            ),
-          ),
+          child: Text('Skor: $score',
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32))),
         ),
       ],
     );
   }
 }
-
-// ── Start overlay ─────────────────────────────────────────────────────────────
 
 class _StartOverlay extends StatelessWidget {
   final VoidCallback onStart;
@@ -198,20 +169,15 @@ class _StartOverlay extends StatelessWidget {
           children: [
             const Text('🍓', style: TextStyle(fontSize: 80)),
             const SizedBox(height: 16),
-            const Text(
-              'Başlamak için dokun!',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [Shadow(blurRadius: 8, color: Colors.black54)],
-              ),
-            ),
+            const Text('Başlamak için dokun!',
+                style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [Shadow(blurRadius: 8, color: Colors.black54)])),
             const SizedBox(height: 8),
-            const Text(
-              'Sepeti sürükle veya dokun',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
+            const Text('Sepeti sürükle veya dokun',
+                style: TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: onStart,
@@ -221,13 +187,10 @@ class _StartOverlay extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
-                ),
+                    borderRadius: BorderRadius.circular(32)),
               ),
-              child: const Text(
-                'Oyunu Başlat',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+              child: const Text('Oyunu Başlat',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

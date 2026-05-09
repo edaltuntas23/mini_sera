@@ -14,10 +14,8 @@ class ShopScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F8E9),
       appBar: AppBar(
-        title: const Text(
-          '🛒 Market',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('🛒 Market',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF43A047),
         foregroundColor: Colors.white,
         actions: [
@@ -30,9 +28,7 @@ class ShopScreen extends StatelessWidget {
                 Text(
                   '${shop.coins}',
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -58,36 +54,28 @@ class ShopScreen extends StatelessWidget {
               if (fruit.isUnlocked) {
                 await shop.selectFruit(fruit.id);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${fruit.emoji} ${fruit.name} seçildi!'),
-                      duration: const Duration(seconds: 1),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('${fruit.emoji} ${fruit.name} seçildi!'),
+                    duration: const Duration(seconds: 1),
+                    backgroundColor: Colors.green,
+                  ));
                 }
               } else {
                 final ok = await shop.purchaseFruit(fruit.id);
                 if (context.mounted) {
                   if (ok) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '${fruit.emoji} ${fruit.name} açıldı! (${fruit.price} 🪙)',
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          '${fruit.emoji} ${fruit.name} açıldı! (${fruit.price} 🪙)'),
+                      backgroundColor: Colors.green,
+                    ));
                     await shop.selectFruit(fruit.id);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Yeterli coin yok! Gerekli: ${fruit.price} 🪙',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text('Yeterli coin yok! Gerekli: ${fruit.price} 🪙'),
+                      backgroundColor: Colors.red,
+                    ));
                   }
                 }
               }
@@ -120,15 +108,15 @@ class _FruitCard extends StatelessWidget {
           color: isSelected
               ? const Color(0xFFE8F5E9)
               : fruit.isUnlocked
-              ? Colors.white
-              : Colors.grey.shade100,
+                  ? Colors.white
+                  : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF43A047)
                 : fruit.isUnlocked
-                ? Colors.green.shade200
-                : Colors.grey.shade300,
+                    ? Colors.green.shade200
+                    : Colors.grey.shade300,
             width: isSelected ? 3 : 1.5,
           ),
           boxShadow: [
@@ -156,11 +144,8 @@ class _FruitCard extends StatelessWidget {
                         color: Colors.grey.shade600,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.lock,
-                        size: 16,
-                        color: Colors.white,
-                      ),
+                      child:
+                          const Icon(Icons.lock, size: 16, color: Colors.white),
                     ),
                   ),
               ],
@@ -179,10 +164,8 @@ class _FruitCard extends StatelessWidget {
             const SizedBox(height: 4),
             if (fruit.isUnlocked)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? const Color(0xFF43A047)
