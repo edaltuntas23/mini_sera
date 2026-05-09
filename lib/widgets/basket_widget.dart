@@ -3,7 +3,6 @@ import '../providers/game_provider.dart';
 
 class BasketWidget extends StatelessWidget {
   const BasketWidget({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -17,12 +16,10 @@ class BasketWidget extends StatelessWidget {
           end: Alignment.bottomCenter,
         ),
         boxShadow: const [
-          BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 3)),
+          BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 3))
         ],
       ),
-      child: const Center(
-        child: Text('🧺', style: TextStyle(fontSize: 16)),
-      ),
+      child: const Center(child: Text('🧺', style: TextStyle(fontSize: 16))),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/game_provider.dart';
 import 'providers/shop_provider.dart';
+import 'providers/sensor_provider.dart';
 import 'screens/home_page.dart';
 
 void main() async {
@@ -19,6 +20,7 @@ class MiniGreenhouseApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ShopProvider()..init()),
+        ChangeNotifierProvider(create: (_) => SensorProvider()..startPolling()),
       ],
       child: MaterialApp(
         title: 'Mini Greenhouse',

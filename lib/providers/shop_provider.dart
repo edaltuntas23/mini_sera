@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/fruit_item.dart';
 
 class ShopProvider extends ChangeNotifier {
-  static const String _coinsKey = 'coins';
-  static const String _selectedKey = 'selected_fruit';
-  static const String _unlockedPrefix = 'unlocked_';
+  static const _coinsKey = 'coins';
+  static const _selectedKey = 'selected_fruit';
+  static const _unlockedPfx = 'unlocked_';
 
   int _coins = 0;
-  String _selectedFruitId = 'strawberry';
+  String _selectedId = 'strawberry';
 
   final List<FruitItem> fruits = [
     FruitItem(
@@ -28,53 +27,46 @@ class ShopProvider extends ChangeNotifier {
   ];
 
   int get coins => _coins;
-  String get selectedFruitId => _selectedFruitId;
+  String get selectedFruitId => _selectedId;
   String get selectedEmoji =>
-      fruits.firstWhere((f) => f.id == _selectedFruitId).emoji;
+      fruits.firstWhere((f) => f.id == _selectedId).emoji;
 
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _coins = prefs.getInt(_coinsKey) ?? 0;
-    _selectedFruitId = prefs.getString(_selectedKey) ?? 'strawberry';
-    for (final fruit in fruits) {
-      if (fruit.price == 0) {
-        fruit.isUnlocked = true;
-      } else {
-        fruit.isUnlocked =
-            prefs.getBool('$_unlockedPrefix${fruit.id}') ?? false;
-      }
+    final p = await SharedPreferences.getInstance();
+    _coins = p.getInt(_coinsKey) ?? 0;
+    _selectedId = p.getString(_selectedKey) ?? 'strawberry';
+    for (final f in fruits) {
+      f.isUnlocked =
+          f.price == 0 ? true : (p.getBool('$_unlockedPfx${f.id}') ?? false);
     }
     notifyListeners();
   }
 
-  Future<void> addCoins(int amount) async {
-    _coins += amount;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_coinsKey, _coins);
+  Future<void> addCoins(int n) async {
+    _coins += n;
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(_coinsKey, _coins);
     notifyListeners();
   }
 
-  Future<bool> purchaseFruit(String fruitId) async {
-    final fruit = fruits.firstWhere((f) => f.id == fruitId);
-    if (fruit.isUnlocked) return false;
-    if (_coins < fruit.price) return false;
-
-    _coins -= fruit.price;
-    fruit.isUnlocked = true;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_coinsKey, _coins);
-    await prefs.setBool('$_unlockedPrefix$fruitId', true);
+  Future<bool> purchaseFruit(String id) async {
+    final f = fruits.firstWhere((x) => x.id == id);
+    if (f.isUnlocked || _coins < f.price) return false;
+    _coins -= f.price;
+    f.isUnlocked = true;
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(_coinsKey, _coins);
+    await p.setBool('$_unlockedPfx$id', true);
     notifyListeners();
     return true;
   }
 
-  Future<void> selectFruit(String fruitId) async {
-    final fruit = fruits.firstWhere((f) => f.id == fruitId);
-    if (!fruit.isUnlocked) return;
-    _selectedFruitId = fruitId;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_selectedKey, fruitId);
+  Future<void> selectFruit(String id) async {
+    final f = fruits.firstWhere((x) => x.id == id);
+    if (!f.isUnlocked) return;
+    _selectedId = id;
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_selectedKey, id);
     notifyListeners();
   }
 }

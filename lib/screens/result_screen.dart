@@ -2,82 +2,158 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/game_provider.dart';
+import '../providers/shop_provider.dart';
+import '../widgets/fruit_bg.dart';
 import 'home_page.dart';
-import 'game_screen.dart';
+import 'game_page.dart';
+import 'game_menu_page.dart';
+import 'market_page.dart';
 
 class ResultScreen extends StatelessWidget {
-  final int score;
-  final int coinsEarned;
-
-  const ResultScreen({
-    super.key,
-    required this.score,
-    required this.coinsEarned,
-  });
+  final int score, coinsEarned;
+  const ResultScreen(
+      {super.key, required this.score, required this.coinsEarned});
 
   @override
   Widget build(BuildContext context) {
+    final shop = context.watch<ShopProvider>();
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF7B1FA2), Color(0xFFE040FB)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              ..._confetti.map((p) => Positioned(
-                    left: p[0],
-                    top: p[1],
-                    child: Text('🍓', style: TextStyle(fontSize: p[2])),
-                  )),
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('$score İsabet',
-                        style: const TextStyle(
-                          fontSize: 52,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(blurRadius: 16, color: Colors.black38)
-                          ],
-                        )),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🪙', style: TextStyle(fontSize: 22)),
-                          const SizedBox(width: 8),
-                          Text('+$coinsEarned Coin Kazandın!',
-                              style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white)),
-                        ],
-                      ),
-                    ),
-                  ],
+      backgroundColor: const Color(0xFFEAF4EC),
+      body: Stack(children: [
+        // Shared fruit background
+        const FruitBg(),
+
+        // Small back-to-home icon top-left
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12, top: 8),
+              child: GestureDetector(
+                onTap: () {
+                  context.read<GameProvider>().resetToIdle();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomePage()),
+                    (_) => false,
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF52B788).withValues(alpha: 0.4)),
+                  ),
+                  child: const Icon(Icons.home_rounded,
+                      color: Color(0xFF2D6A4F), size: 22),
                 ),
               ),
-              Positioned(
-                bottom: 24,
-                left: 24,
-                right: 24,
-                child: Column(
+            ),
+          ),
+        ),
+
+        SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Tekrar Oynat
+                    const SizedBox(height: 40),
+
+                    // Game Over header
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B4332),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Text('OYUN BİTTİ',
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF95D5B2),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 3)),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Score
+                    Text('$score',
+                        style: const TextStyle(
+                            fontSize: 80,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1B4332),
+                            height: 1)),
+                    const Text('İSABET',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF2D6A4F),
+                            letterSpacing: 4)),
+
+                    const SizedBox(height: 24),
+
+                    // Coins earned + total
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                            color:
+                                const Color(0xFF52B788).withValues(alpha: 0.4)),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF2D6A4F).withValues(alpha: 0.08),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(children: [
+                              const Text('🪙', style: TextStyle(fontSize: 26)),
+                              const SizedBox(height: 4),
+                              Text('+$coinsEarned',
+                                  style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF2D6A4F))),
+                              const Text('Kazandın',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Color(0xFF52796F))),
+                            ]),
+                            Container(
+                                width: 1,
+                                height: 50,
+                                color: const Color(0xFF52B788)
+                                    .withValues(alpha: 0.3)),
+                            Column(children: [
+                              const Text('💰', style: TextStyle(fontSize: 26)),
+                              const SizedBox(height: 4),
+                              Text('${shop.coins}',
+                                  style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF1B4332))),
+                              const Text('Toplam',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Color(0xFF52796F))),
+                            ]),
+                          ]),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Play Again
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -85,66 +161,88 @@ class ResultScreen extends StatelessWidget {
                         onPressed: () {
                           context.read<GameProvider>().resetToIdle();
                           Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const GameScreen()),
-                          );
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const GamePage()));
                         },
-                        icon: const Icon(Icons.replay),
-                        label: const Text('Tekrar Oynat',
+                        icon: const Icon(Icons.replay_rounded, size: 22),
+                        label: const Text('Tekrar Oyna',
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                                fontSize: 17, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
+                          backgroundColor: const Color(0xFF2D6A4F),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                              borderRadius: BorderRadius.circular(18)),
+                          elevation: 4,
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
-                    // Geri Dön — NO addCoins here, coins already awarded
-                    TextButton(
-                      onPressed: () {
-                        context.read<GameProvider>().resetToIdle();
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (_) => const HomePage()),
-                          (_) => false,
-                        );
-                      },
-                      child: const Text('Geri Dön',
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+
+                    Row(children: [
+                      // Market
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              context.read<GameProvider>().resetToIdle();
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const MarketPage()));
+                            },
+                            icon: const Text('🛒',
+                                style: TextStyle(fontSize: 18)),
+                            label: const Text('Market',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF2D6A4F),
+                              side: const BorderSide(
+                                  color: Color(0xFF2D6A4F), width: 2),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Game Menu
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              context.read<GameProvider>().resetToIdle();
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const GameMenuPage()),
+                                (_) => false,
+                              );
+                            },
+                            icon: const Icon(Icons.sports_esports_rounded,
+                                size: 18),
+                            label: const Text('Menü',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF1B4332),
+                              side: const BorderSide(
+                                  color: Color(0xFF1B4332), width: 2),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ]),
+            ),
           ),
         ),
-      ),
+      ]),
     );
   }
-
-  static const List<List<double>> _confetti = [
-    [20, 80, 36],
-    [280, 60, 28],
-    [80, 180, 32],
-    [300, 160, 40],
-    [10, 300, 24],
-    [330, 280, 36],
-    [150, 380, 28],
-    [260, 360, 32],
-    [50, 460, 40],
-    [310, 440, 24],
-    [180, 520, 36],
-    [30, 580, 28],
-    [290, 560, 32],
-    [120, 640, 40],
-    [340, 620, 28],
-    [70, 700, 36],
-  ];
 }
