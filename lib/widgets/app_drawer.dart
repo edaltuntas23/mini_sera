@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/shop_provider.dart';
 import '../screens/game_menu_page.dart';
 import '../screens/curiosity_page.dart';
-import '../screens/home_page.dart';
 
 /// Drawer navigation:
 ///   Home  →  (drawer)  →  closes drawer, stays on Home (already there)
@@ -18,7 +17,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     // shop provider'ı hala diğer mantıklar için gerekebilir diye tutuyoruz
     // ancak coin gösteren widget'ı aşağıdan kaldırdık.
-    final shop = context.watch<ShopProvider>();
+    context.watch<ShopProvider>();
 
     return Drawer(
       backgroundColor: const Color(0xFF0D1F16),

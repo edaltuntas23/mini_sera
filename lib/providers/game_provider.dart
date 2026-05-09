@@ -83,7 +83,9 @@ class GameProvider extends ChangeNotifier {
     if (_state != GameState.playing) return;
     _tick++;
     if (_tick % spawnEvery == 0) _spawn();
-    for (final f in _fruits) f.y += f.speed;
+    for (final f in _fruits) {
+      f.y += f.speed;
+    }
 
     final toRemove = <FallingFruit>[];
     final bLeft = _basketX - basketWidth / 2;

@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../models/fruit_item.dart';
 import '../providers/shop_provider.dart';
 import '../widgets/fruit_bg.dart';
-import 'game_menu_page.dart';
 
 // ── In-flight emoji model ─────────────────────────────────────────────────────
 
@@ -75,19 +74,22 @@ class _MarketPageState extends State<MarketPage> with TickerProviderStateMixin {
     final shop = ctx.read<ShopProvider>();
     if (fruit.isUnlocked) {
       await shop.selectFruit(fruit.id);
-      if (ctx.mounted)
+      if (ctx.mounted) {
         _toast(ctx, '${fruit.emoji} ${fruit.name} seçildi!', true);
+      }
     } else {
       _launch(fruit.emoji, tapGlobal);
       final ok = await shop.purchaseFruit(fruit.id);
       if (!ok) {
         setState(() => _flyers.removeWhere((f) => f.emoji == fruit.emoji));
-        if (ctx.mounted)
+        if (ctx.mounted) {
           _toast(ctx, 'Yeterli coin yok! Gerekli: ${fruit.price} 🪙', false);
+        }
       } else {
         await shop.selectFruit(fruit.id);
-        if (ctx.mounted)
+        if (ctx.mounted) {
           _toast(ctx, '${fruit.emoji} ${fruit.name} açıldı!', true);
+        }
       }
     }
   }
@@ -299,10 +301,9 @@ class _ShelfRow extends StatelessWidget {
         Container(
           height: 10,
           margin: const EdgeInsets.only(left: 6, right: 6, bottom: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFDDC4A0),
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(4)),
+          decoration: const BoxDecoration(
+            color: Color(0xFFDDC4A0),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(4)),
           ),
         ),
       ],
