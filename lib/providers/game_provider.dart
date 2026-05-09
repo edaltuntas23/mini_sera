@@ -40,6 +40,15 @@ class GameProvider extends ChangeNotifier {
 
   String _activeEmoji = '🍓';
 
+  /// Tracks whether coins have already been awarded for this session.
+  /// Prevents double-granting on navigate back or widget rebuild.
+  bool _coinsAwarded = false;
+  bool get coinsAwarded => _coinsAwarded;
+
+  int get earnedCoins => _score;
+
+  // ── Setup ────────────────────────────────────────────────────────────────
+
   void setScreenSize(double width, double height) {
     _screenWidth = width;
     _screenHeight = height;
@@ -50,13 +59,16 @@ class GameProvider extends ChangeNotifier {
     _activeEmoji = emoji;
   }
 
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+
   void startGame() {
+    _gameTimer?.cancel();
     _state = GameState.playing;
     _score = 0;
     _lives = 3;
     _tickCount = 0;
+    _coinsAwarded = false; // ← Reset award flag for new session
     _fruits.clear();
-    _gameTimer?.cancel();
     _gameTimer = Timer.periodic(
       const Duration(milliseconds: tickMs),
       (_) => _tick(),
@@ -70,14 +82,24 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Call when leaving GameScreen without going to ResultScreen
+  /// (e.g. user presses the system back button mid-game).
   void resetToIdle() {
     _gameTimer?.cancel();
     _state = GameState.idle;
+    _coinsAwarded = false;
     _fruits.clear();
     _score = 0;
     _lives = 3;
     notifyListeners();
   }
+
+  /// Called by ResultScreen exactly once to mark coins as awarded.
+  void markCoinsAwarded() {
+    _coinsAwarded = true;
+  }
+
+  // ── Game loop ─────────────────────────────────────────────────────────────
 
   void _tick() {
     if (_state != GameState.playing) return;
@@ -101,8 +123,7 @@ class GameProvider extends ChangeNotifier {
       final fruitBottom = fruit.y + fruitSize;
 
       final inRange = fruitCentreX >= basketLeft && fruitCentreX <= basketRight;
-      final atLevel =
-          fruitBottom >= basketTop &&
+      final atLevel = fruitBottom >= basketTop &&
           fruitBottom <= basketTop + basketHeight + fruit.speed + 4;
 
       if (atLevel && inRange) {
@@ -129,16 +150,16 @@ class GameProvider extends ChangeNotifier {
   void _spawnFruit() {
     final x = _rng.nextDouble() * (_screenWidth - fruitSize);
     final speed = minSpeed + _rng.nextDouble() * (maxSpeed - minSpeed);
-    _fruits.add(
-      FallingFruit(
-        id: '${_tickCount}_${_rng.nextInt(9999)}',
-        x: x,
-        y: -fruitSize,
-        emoji: _activeEmoji,
-        speed: speed,
-      ),
-    );
+    _fruits.add(FallingFruit(
+      id: '${_tickCount}_${_rng.nextInt(9999)}',
+      x: x,
+      y: -fruitSize,
+      emoji: _activeEmoji,
+      speed: speed,
+    ));
   }
+
+  // ── Input ─────────────────────────────────────────────────────────────────
 
   void moveBasket(double dx) {
     _basketX = (_basketX + dx).clamp(
@@ -152,8 +173,6 @@ class GameProvider extends ChangeNotifier {
     _basketX = x.clamp(basketWidth / 2, _screenWidth - basketWidth / 2);
     notifyListeners();
   }
-
-  int get earnedCoins => _score;
 
   @override
   void dispose() {

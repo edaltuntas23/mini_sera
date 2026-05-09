@@ -16,12 +16,14 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   bool _sizeSet = false;
-  bool _navigating = false; // Guard: navigate to result only once
+  bool _navigating = false; // Prevents multiple navigations to ResultScreen
 
   @override
   void initState() {
     super.initState();
+    // Sync active emoji from shop when screen first loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final emoji = context.read<ShopProvider>().selectedEmoji;
       context.read<GameProvider>().setActiveEmoji(emoji);
     });
@@ -29,26 +31,37 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    // Only reset if we're not already heading to result screen
+    // Only reset if we did NOT navigate to ResultScreen.
+    // If we did navigate, ResultScreen owns the game state from here.
     if (!_navigating) {
       context.read<GameProvider>().resetToIdle();
     }
     super.dispose();
   }
 
+  /// Called exactly once when game over is detected.
+  /// Awards coins via ShopProvider, then navigates to ResultScreen.
   void _goToResult(GameProvider game) {
     if (_navigating) return;
     _navigating = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final shop = context.read<ShopProvider>();
-      await shop.addCoins(game.earnedCoins);
+      if (!mounted) return;
+
+      // Award coins only if not already awarded (guards against rebuilds)
+      if (!game.coinsAwarded) {
+        game.markCoinsAwarded();
+        await context.read<ShopProvider>().addCoins(game.earnedCoins);
+      }
+
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              ResultScreen(score: game.score, coinsEarned: game.earnedCoins),
+          builder: (_) => ResultScreen(
+            score: game.score,
+            coinsEarned: game.earnedCoins,
+          ),
         ),
       );
     });
@@ -58,7 +71,8 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     final game = context.watch<GameProvider>();
 
-    if (game.state == GameState.gameOver) {
+    // Trigger result navigation once when game ends
+    if (game.state == GameState.gameOver && !_navigating) {
       _goToResult(game);
     }
 
@@ -70,10 +84,10 @@ class _GameScreenState extends State<GameScreen> {
             final w = constraints.maxWidth;
             final h = constraints.maxHeight;
 
-            // Set screen size once
             if (!_sizeSet && w > 0 && h > 0) {
               _sizeSet = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
                 context.read<GameProvider>().setScreenSize(w, h);
               });
             }
@@ -108,7 +122,7 @@ class _GameScreenState extends State<GameScreen> {
                     child: const BasketWidget(),
                   ),
 
-                  // Idle overlay
+                  // Start overlay
                   if (game.state == GameState.idle)
                     Positioned.fill(
                       child: _StartOverlay(
@@ -137,20 +151,17 @@ class _HudBar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Lives
         Row(
           children: List.generate(
-            3,
-            (i) => Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: Text(
-                i < lives ? '❤️' : '🖤',
-                style: const TextStyle(fontSize: 22),
-              ),
-            ),
-          ),
+              3,
+              (i) => Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: Text(
+                      i < lives ? '❤️' : '🖤',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  )),
         ),
-        // Score
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
@@ -207,10 +218,8 @@ class _StartOverlay extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF43A047),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 48,
-                  vertical: 16,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(32),
                 ),

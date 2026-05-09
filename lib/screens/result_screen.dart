@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/game_provider.dart';
+import '../providers/shop_provider.dart';
 import 'home_screen.dart';
 import 'game_screen.dart';
 
@@ -27,7 +30,7 @@ class ResultScreen extends StatelessWidget {
         child: SafeArea(
           child: Stack(
             children: [
-              // Confetti fruits (fixed positions, no MediaQuery needed)
+              // Decorative confetti
               ..._confettiPositions.map(
                 (p) => Positioned(
                   left: p[0],
@@ -36,7 +39,7 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
 
-              // Main content
+              // Score & coins
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -55,9 +58,7 @@ class ResultScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
+                          horizontal: 24, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(32),
@@ -82,28 +83,37 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
 
-              // Bottom buttons
+              // Buttons
               Positioned(
                 bottom: 24,
                 left: 24,
                 right: 24,
                 child: Column(
                   children: [
+                    // ── Tekrar Oynat ──────────────────────────────────────
+                    // BUG FIX: startGame() is called here directly so the
+                    // new GameScreen always begins in playing state, not idle.
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const GameScreen()),
-                        ),
+                        onPressed: () {
+                          // Reset provider state before pushing new screen
+                          final gameProvider = context.read<GameProvider>();
+                          gameProvider.resetToIdle();
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const GameScreen(),
+                            ),
+                          );
+                        },
                         icon: const Icon(Icons.replay),
                         label: const Text(
                           'Tekrar Oynat',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
@@ -115,12 +125,21 @@ class ResultScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
+
+                    // ── Geri Dön ──────────────────────────────────────────
+                    // BUG FIX: We do NOT add coins here. Coins were already
+                    // awarded in game_screen.dart exactly once via
+                    // game.markCoinsAwarded(). ShopProvider already has the
+                    // updated balance — we just navigate home.
                     TextButton(
-                      onPressed: () => Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                        (_) => false,
-                      ),
+                      onPressed: () {
+                        context.read<GameProvider>().resetToIdle();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          (_) => false,
+                        );
+                      },
                       child: const Text(
                         'Geri Dön',
                         style: TextStyle(
@@ -140,7 +159,6 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  // Decorative confetti positions [left, top, fontSize]
   static const List<List<double>> _confettiPositions = [
     [20, 80, 36],
     [280, 60, 28],
